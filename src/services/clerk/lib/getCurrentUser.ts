@@ -11,7 +11,7 @@ export async function getCurrentUser({ allData = false } = {}) {
   return {
     userId,
     redirectToSignIn,
-    user: allData && userId != null ? await getUser : undefined,
+    user: allData && userId != null ? await getUser(userId) : undefined,
   };
 }
 
