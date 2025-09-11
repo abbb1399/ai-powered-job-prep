@@ -1,8 +1,8 @@
 import { db } from "@/drizzle/db";
 import { UserTable } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { getUserIdTag } from "@/features/users/dbCache";
 import { auth } from "@clerk/nextjs/server";
-import { getUserIdTag } from "../../../features/users/dbCache";
+import { eq } from "drizzle-orm";
 import { cacheTag } from "next/dist/server/use-cache/cache-tag";
 
 export async function getCurrentUser({ allData = false } = {}) {
@@ -15,11 +15,11 @@ export async function getCurrentUser({ allData = false } = {}) {
   };
 }
 
-async function getUser(userId: string) {
+async function getUser(id: string) {
   "use cache";
-  cacheTag(getUserIdTag(userId));
+  cacheTag(getUserIdTag(id));
 
   return db.query.UserTable.findFirst({
-    where: eq(UserTable.id, userId),
+    where: eq(UserTable.id, id),
   });
 }
