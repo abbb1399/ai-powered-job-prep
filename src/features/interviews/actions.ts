@@ -8,6 +8,8 @@ import { getJobInfoIdTag } from "@/features/jobInfos/dbCache";
 import { and, eq } from "drizzle-orm";
 import { insertInterview, updateInterview as updateInterviewDb } from "./db";
 import { getInterviewIdTag } from "./dbCache";
+import { canCreateInterview } from "./permissions";
+import { PLAN_LIMIT_MESSAGE } from "@/lib/errorToast";
 
 export async function createInterview({
   jobInfoId,
@@ -20,6 +22,13 @@ export async function createInterview({
     return {
       error: true,
       message: "You dont't have permission to do this",
+    };
+  }
+
+  if (!(await canCreateInterview())) {
+    return {
+      error: true,
+      message: PLAN_LIMIT_MESSAGE,
     };
   }
 
