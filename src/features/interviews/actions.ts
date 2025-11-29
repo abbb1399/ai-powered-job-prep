@@ -12,6 +12,7 @@ import { canCreateInterview } from "./permissions";
 import { PLAN_LIMIT_MESSAGE, RATE_LIMIT_MESSAGE } from "@/lib/errorToast";
 import arcjet, { tokenBucket, request } from "@arcjet/next";
 import { env } from "@/data/env/server";
+import { generateAiInterviewFeedback } from "@/services/ai/interviews";
 
 const aj = arcjet({
   characteristics: ["userId"],
@@ -103,6 +104,48 @@ export async function updateInterview(
   return { error: false };
 }
 
+export async function generateInterviewFeedback(interviewId: string) {
+  const { userId, user } = await getCurrentUser({ allData: true });
+  if (userId == null || user == null) {
+    return {
+      error: true,
+      message: "You dont't have permission to do this",
+    };
+  }
+
+  const interview = await getInterview(interviewId, userId);
+  if (interview == null) {
+    return {
+      error: true,
+      message: "You dont't have permission to do this",
+    };
+  }
+
+  if (interview.humeChatId == null) {
+    return {
+      error: true,
+      message: "Interview has not been completed yet",
+    };
+  }
+
+  const feedback = await generateAiInterviewFeedback({
+    humeChatId: interview.humeChatId,
+    jobInfo: interview.jobInfo,
+    userName: user.name,
+  });
+
+  if (feedback == null) {
+    return {
+      error: true,
+      message: "Failed to generate feedback",
+    };
+  }
+
+  await updateInterviewDb(interviewId, { feedback });
+
+  return { error: false };
+}
+
 async function getJobInfo(id: string, userId: string) {
   "use cache";
   cacheTag(getJobInfoIdTag(id));
@@ -118,7 +161,17 @@ async function getInterview(id: string, userId: string) {
 
   const interview = await db.query.InterviewTable.findFirst({
     where: eq(InterviewTable.id, id),
-    with: { jobInfo: { columns: { id: true, userId: true } } },
+    with: {
+      jobInfo: {
+        columns: {
+          id: true,
+          userId: true,
+          description: true,
+          title: true,
+          experienceLevel: true,
+        },
+      },
+    },
   });
 
   if (interview == null) return null;

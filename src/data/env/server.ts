@@ -1,5 +1,5 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import z from "zod";
 
 export const env = createEnv({
   server: {
@@ -12,6 +12,7 @@ export const env = createEnv({
     CLERK_SECRET_KEY: z.string().min(1),
     HUME_API_KEY: z.string().min(1),
     HUME_SECRET_KEY: z.string().min(1),
+    GEMINI_API_KEY: z.string().min(1),
   },
   createFinalSchema: (env) => {
     return z.object(env).transform((val) => {
